@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+
+<html lang="th">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AETHERIS OS — Hyper-Advanced Smart Home Command Center</title>
+
+
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Prompt:wght@200;300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+
+
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+
+
+    <style>
+        /* ==========================================================================
+
+           1. CORE ARCHITECTURE & DESIGN VARIABLES
+
+           ========================================================================== */
+
+        :root {
+
+            --color-void: #03030a;
+
+            --color-deep-space: #08081a;
+
+            --color-surface: rgba(13, 13, 35, 0.45);
+
+            --color-surface-hover: rgba(22, 22, 55, 0.65);
+
+            --color-border: rgba(0, 229, 255, 0.12);
+
+            --color-border-glow: rgba(0, 229, 255, 0.4);
+
+
+
+            /* Neon Palette mapping to Datastreams */
+
+            --neon-cyan: #00e5ff;
+            /* V1: AirCon & V5: Thermostat */
+
+            --neon-amber: #ffaa00;
+            /* V0: Light & V4: Brightness */
+
+            --neon-emerald: #00ff88;
+            /* V2: Lock & V6: Energy */
+
+            --neon-ruby: #ff2a5f;
+            /* V3: Security LED Alert */
+
+            --neon-purple: #bd00ff;
+            /* V7: AI Terminal */
+
+
+
+            --text-primary: #ffffff;
+
+            --text-secondary: #8fa0dd;
+
+            --text-dark: #464f77;
+
+
+
+            --glow-cyan: rgba(0, 229, 255, 0.25);
+
+            --glow-amber: rgba(255, 170, 0, 0.25);
+
+            --glow-emerald: rgba(0, 255, 136, 0.25);
+
+            --glow-ruby: rgba(255, 42, 95, 0.35);
+
+
+
+            --font-display: 'Orbitron', sans-serif;
+
+            --font-sans: 'Prompt', sans-serif;
+
+            --font-mono: 'Fira Code', monospace;
+
+
+
+            --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+            --transition-fast: all 0.2s ease;
+
+        }
+
+
+
+        /* ==========================================================================
+
+           2. BASE RESETS & SCROLLBAR
+
+           ========================================================================== */
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+            outline: none;
+
+            -webkit-tap-highlight-color: transparent;
+
+        }
+
+
+
+        body {
+
+            background-color: var(--color-void);
+
+            color: var(--text-primary);
+
+            font-family: var(--font-sans);
+
+            min-height: 100vh;
+
+            overflow-x: hidden;
+
+            position: relative;
+
+            padding: 24px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 24px;
+
+        }
+
+
+
+        ::-webkit-scrollbar {
+
+            width: 6px;
+
+            height: 6px;
+
+        }
+
+        ::-webkit-scrollbar-track {
+
+            background: var(--color-void);
+
+        }
+
+        ::-webkit-scrollbar-thumb {
+
+            background: var(--color-border);
+
+            border-radius: 10px;
+
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+
+            background: var(--color-border-glow);
+
+        }
+
+
+
+        /* Ambient Space Micro-Dust Animation Overlay */
+
+        .space-bg {
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            width: 100vw;
+
+            height: 100vh;
+
+            background:
+
+                radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.04) 0%, transparent 40%),
+
+                radial-gradient(circle at 90% 80%, rgba(189, 0, 255, 0.03) 0%, transparent 40%),
+
+                radial-gradient(circle at 50% 50%, rgba(8, 8, 26, 1) 0%, var(--color-void) 100%);
+
+            z-index: -2;
+
+            pointer-events: none;
+
+        }
+
+
+
+        .grid-texture {
+
+            position: fixed;
+
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            background-image: linear-gradient(rgba(255, 255, 255, 0.003) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.003) 1px, transparent 1px);
+
+            background-size: 40px 40px;
+
+            z-index: -1;
+
+            pointer-events: none;
+
+        }
+
+
+
+        /* CONTAINER LAYOUT */
+
+        .dashboard-wrapper {
+
+            width: 100%;
+
+            max-width: 1600px;
+
+            margin: 0 auto;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 24px;
+
+            z-index: 1;
+
+        }
+
+
+
+        /* ==========================================================================
+
+           3. HEADER & CONTROLLER MATRIX CONTROL PANELS
+
+           ========================================================================== */
+
+        .system-header {
+
+            background: var(--color-surface);
+
+            backdrop-filter: blur(25px);
+
+            border: 1px solid var(--color-border);
+
+            border-radius: 24px;
+
+            padding: 24px 32px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            flex-wrap: wrap;
+
+            gap: 24px;
+
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+
+        }
+
+
+
+        .brand-section {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 18px;
+
+        }
+
+
+
+        .logo-core {
+
+            width: 54px;
+
+            height: 54px;
+
+            border-radius: 16px;
+
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            font-size: 28px;
+
+            color: var(--color-void);
+
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+
+            animation: corePulse 4s ease-in-out infinite;
+
+        }
+
+
+
+        .brand-text h1 {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 2px;
+
+            background: linear-gradient(90deg, #fff, var(--text-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            /* Add this standard property */
+
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            /* Add standard fallback */
+        }
+
+        .brand-text p {
+
+            font-size: 12px;
+
+            color: var(--neon-cyan);
+
+            letter-spacing: 4px;
+
+            text-transform: uppercase;
+
+            margin-top: 2px;
+
+        }
+
+
+
+        /* BLYNK CONFIG PANEL INTEGRATION */
+
+        .blynk-config-trigger {
+
+            background: rgba(255, 255, 255, 0.03);
+
+            border: 1px solid var(--color-border);
+
+            padding: 10px 16px;
+
+            border-radius: 12px;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            font-size: 13px;
+
+            color: var(--text-secondary);
+
+            transition: var(--transition-fast);
+
+        }
+
+        .blynk-config-trigger:hover {
+
+            border-color: var(--neon-cyan);
+
+            color: #fff;
+
+            background: rgba(0, 229, 255, 0.05);
+
+        }
+
+
+
+        .live-metrics {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 32px;
+
+        }
+
+
+
+        .metric-pill {
+
+            text-align: right;
+
+        }
+
+        .metric-pill .lbl {
+
+            font-size: 11px;
+
+            color: var(--text-dark);
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+
+            margin-bottom: 4px;
+
+        }
+
+        .metric-pill .val {
+
+            font-family: var(--font-display);
+
+            font-size: 20px;
+
+            font-weight: 600;
+
+        }
+
+        .metric-pill .val.time {
+
+            color: #fff;
+
+        }
+
+        .metric-pill .val.status {
+
+            color: var(--neon-emerald);
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 6px;
+
+            justify-content: flex-end;
+
+        }
+
+        .status-dot {
+
+            width: 8px;
+
+            height: 8px;
+
+            background: var(--neon-emerald);
+
+            border-radius: 50%;
+
+            box-shadow: 0 0 10px var(--neon-emerald);
+
+            display: inline-block;
+
+        }
+
+
+
+        /* BLYNK SETTINGS MODAL LAYER */
+
+        .modal-overlay {
+
+            position: fixed;
+
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            background: rgba(2, 2, 10, 0.85);
+
+            backdrop-filter: blur(15px);
+
+            z-index: 100;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            opacity: 0;
+            pointer-events: none;
+
+            transition: var(--transition-smooth);
+
+        }
+
+        .modal-overlay.active {
+
+            opacity: 1;
+            pointer-events: auto;
+
+        }
+
+        .config-modal {
+
+            background: #0a0a1f;
+
+            border: 1px solid var(--color-border-glow);
+
+            border-radius: 24px;
+
+            padding: 32px;
+
+            width: 100%;
+
+            max-width: 500px;
+
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+
+            transform: scale(0.9);
+
+            transition: var(--transition-smooth);
+
+        }
+
+        .modal-overlay.active .config-modal {
+
+            transform: scale(1);
+
+        }
+
+        .modal-header {
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+
+        }
+
+        .modal-header h3 {
+            font-family: var(--font-display);
+            font-size: 18px;
+            color: var(--neon-cyan);
+        }
+
+        .close-modal-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input-group input {
+
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--color-border);
+
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fff;
+            font-family: var(--font-mono);
+            font-size: 13px;
+
+            transition: var(--transition-fast);
+
+        }
+
+        .input-group input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+        }
+
+        .save-config-btn {
+
+            width: 100%;
+            background: var(--neon-cyan);
+            color: var(--color-void);
+            border: none;
+
+            border-radius: 12px;
+            padding: 14px;
+            font-family: var(--font-display);
+            font-weight: 700;
+
+            cursor: pointer;
+            transition: var(--transition-fast);
+            margin-top: 10px;
+
+        }
+
+        .save-config-btn:hover {
+            background: #00b9d1;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+        }
+
+
+
+        /* ==========================================================================
+
+           4. DYNAMIC INTERACTIVE GRID SYSTEM
+
+           ========================================================================== */
+
+        .dashboard-grid {
+
+            display: grid;
+
+            grid-template-columns: repeat(12, 1fr);
+
+            gap: 24px;
+
+        }
+
+
+
+        /* CARD FRAME */
+
+        .card {
+
+            background: var(--color-surface);
+
+            backdrop-filter: blur(20px);
+
+            border: 1px solid var(--color-border);
+
+            border-radius: 24px;
+
+            padding: 24px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            position: relative;
+
+            overflow: hidden;
+
+            transition: var(--transition-smooth);
+
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+        }
+
+        .card:hover {
+
+            background: var(--color-surface-hover);
+
+            border-color: rgba(0, 229, 255, 0.25);
+
+            transform: translateY(-4px);
+
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+
+        }
+
+
+
+        /* GRID RESPONSIVE SIZES */
+
+        .span-3 {
+            grid-column: span 3;
+        }
+
+        .span-4 {
+            grid-column: span 4;
+        }
+
+        .span-6 {
+            grid-column: span 6;
+        }
+
+        .span-8 {
+            grid-column: span 8;
+        }
+
+        .span-12 {
+            grid-column: span 12;
+        }
+
+
+
+        /* CARD HEADER COMPONENT */
+
+        .card-meta {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            margin-bottom: 24px;
+
+        }
+
+        .card-info h4 {
+
+            font-size: 16px;
+
+            font-weight: 600;
+
+            color: #fff;
+
+            letter-spacing: 0.5px;
+
+        }
+
+        .card-info p {
+
+            font-size: 12px;
+
+            color: var(--text-secondary);
+
+            margin-top: 2px;
+
+        }
+
+        .card-icon-frame {
+
+            width: 46px;
+
+            height: 46px;
+
+            border-radius: 14px;
+
+            background: rgba(255, 255, 255, 0.02);
+
+            border: 1px solid rgba(255, 255, 255, 0.05);
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            font-size: 22px;
+
+            color: var(--text-secondary);
+
+            transition: var(--transition-smooth);
+
+        }
+
+
+
+        /* ==========================================================================
+
+           5. WIDGET TYPE STYLES: SWITHES (V0, V1, V2)
+
+           ========================================================================== */
+
+        .switch-container {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-top: auto;
+
+        }
+
+        .status-text-flag {
+
+            font-family: var(--font-display);
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            color: var(--text-dark);
+
+            text-transform: uppercase;
+
+            transition: var(--transition-fast);
+
+        }
+
+
+
+        /* CYBER TOGGLE TOGGLE BUTTON */
+
+        .cyber-toggle {
+
+            position: relative;
+
+            display: inline-block;
+
+            width: 64px;
+
+            height: 34px;
+
+        }
+
+        .cyber-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .cyber-slider {
+
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            background-color: rgba(255, 255, 255, 0.06);
+            border-radius: 34px;
+
+            transition: var(--transition-smooth);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+
+        }
+
+        .cyber-slider:before {
+
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 4px;
+
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+
+            transition: cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s;
+
+        }
+
+
+
+        /* ACTIVE STATES PER PIN TYPE */
+
+        /* V0: Living Room Light (Amber Theme) */
+
+        .active-v0 .card-icon-frame {
+            background: var(--glow-amber);
+            color: var(--neon-amber);
+            border-color: var(--neon-amber);
+            box-shadow: 0 0 15px var(--glow-amber);
+        }
+
+        .active-v0 .status-text-flag {
+            color: var(--neon-amber);
+            text-shadow: 0 0 8px var(--glow-amber);
+        }
+
+        .active-v0 input:checked+.cyber-slider {
+            background-color: var(--neon-amber);
+            border-color: var(--neon-amber);
+        }
+
+        .active-v0 input:checked+.cyber-slider:before {
+            transform: translateX(30px);
+            background-color: var(--color-void);
+        }
+
+
+
+        /* V1: Air Conditioner (Cyan Theme) */
+
+        .active-v1 .card-icon-frame {
+            background: var(--glow-cyan);
+            color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px var(--glow-cyan);
+        }
+
+        .active-v1 .status-text-flag {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px var(--glow-cyan);
+        }
+
+        .active-v1 input:checked+.cyber-slider {
+            background-color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+        }
+
+        .active-v1 input:checked+.cyber-slider:before {
+            transform: translateX(30px);
+            background-color: var(--color-void);
+        }
+
+
+
+        /* V2: Door Lock (Emerald Theme) */
+
+        .active-v2 .card-icon-frame {
+            background: var(--glow-emerald);
+            color: var(--neon-emerald);
+            border-color: var(--neon-emerald);
+            box-shadow: 0 0 15px var(--glow-emerald);
+        }
+
+        .active-v2 .status-text-flag {
+            color: var(--neon-emerald);
+            text-shadow: 0 0 8px var(--glow-emerald);
+        }
+
+        .active-v2 input:checked+.cyber-slider {
+            background-color: var(--neon-emerald);
+            border-color: var(--neon-emerald);
+        }
+
+        .active-v2 input:checked+.cyber-slider:before {
+            transform: translateX(30px);
+            background-color: var(--color-void);
+        }
+
+
+
+
+
+        /* ==========================================================================
+
+           6. WIDGET TYPE STYLES: SECURITY LED RADAR (V3)
+
+           ========================================================================== */
+
+        .radar-box-wrapper {
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 140px;
+            position: relative;
+
+        }
+
+        .radar-hardware-node {
+
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+
+            background: repeating-radial-gradient(transparent, transparent 12px, rgba(0, 229, 255, 0.05) 13px, transparent 14px);
+
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+
+        }
+
+        .radar-sweeper {
+
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+
+            background: conic-gradient(from 0deg, transparent 60%, rgba(0, 229, 255, 0.4) 100%);
+
+            transform-origin: 0% 0%;
+            animation: radarScan 3.5s linear infinite;
+            border-radius: 0 100% 0 0;
+
+        }
+
+        /* The Blynk V3 LED Indicator Node */
+
+        .blynk-led-node {
+
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            z-index: 5;
+
+            transition: var(--transition-smooth);
+            border: 2px solid #0a0a1f;
+
+        }
+
+
+
+        /* Intrusion Alert Active State (V3 State = 1) */
+
+        .alert-active-v3 {
+
+            border-color: rgba(255, 42, 95, 0.4);
+
+            box-shadow: inset 0 0 20px rgba(255, 42, 95, 0.15);
+
+        }
+
+        .alert-active-v3 .radar-hardware-node {
+            border-color: var(--neon-ruby);
+        }
+
+        .alert-active-v3 .radar-sweeper {
+            background: conic-gradient(from 0deg, transparent 60%, rgba(255, 42, 95, 0.5) 100%);
+            animation-duration: 1.2s;
+        }
+
+        .alert-active-v3 .blynk-led-node {
+
+            background: var(--neon-ruby);
+            box-shadow: 0 0 25px 8px var(--neon-ruby);
+            animation: ledFlash 0.6s infinite alternate;
+
+        }
+
+
+
+        /* ==========================================================================
+
+           7. WIDGET TYPE STYLES: SLIDER & STEP ADJUSTER (V4, V5)
+
+           ========================================================================== */
+
+        /* V4: Brightness Slider Value Display */
+
+        .digital-value-large {
+
+            font-family: var(--font-display);
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 16px;
+            color: #fff;
+
+        }
+
+        .digital-value-large span {
+            font-size: 14px;
+            font-family: var(--font-sans);
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-left: 4px;
+        }
+
+
+
+        .hologram-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            /* Add this standard property */
+            width: 100%;
+            height: 6px;
+            border-radius: 4px;
+
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            outline: none;
+            transition: var(--transition-fast);
+        }
+
+        .hologram-slider::-webkit-slider-thumb {
+
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+
+            background: #fff;
+            border: 4px solid var(--neon-amber);
+            cursor: pointer;
+
+            box-shadow: 0 0 10px var(--glow-amber);
+            transition: var(--transition-fast);
+
+        }
+
+        .hologram-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+
+
+        /* V5: Thermostat Setpoint Mode (Step Layout) */
+
+        .step-adjuster-matrix {
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex: 1;
+            padding: 10px 0;
+
+        }
+
+        .step-ctrl-btn {
+
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+
+            border: 1px solid var(--color-border);
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: var(--transition-fast);
+
+        }
+
+        .step-ctrl-btn:hover {
+            background: var(--glow-cyan);
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+            transform: scale(1.05);
+        }
+
+        .step-ctrl-btn:active {
+            transform: scale(0.95);
+        }
+
+
+
+        .step-center-readout {
+            text-align: center;
+        }
+
+        .step-num-display {
+            font-family: var(--font-display);
+            font-size: 52px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 15px var(--glow-cyan);
+        }
+
+
+
+        .step-progress-track {
+
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 2px;
+            margin-top: 16px;
+            overflow: hidden;
+
+        }
+
+        .step-progress-bar {
+
+            height: 100%;
+            width: 50%;
+            background: var(--neon-cyan);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 8px var(--neon-cyan);
+
+        }
+
+
+
+        /* ==========================================================================
+
+           8. WIDGET TYPE STYLES: GAUGE ENERGY AREA (V6)
+
+           ========================================================================== */
+
+        .gauge-flex-hub {
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 140px;
+
+        }
+
+        .vector-gauge-circle {
+
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            position: relative;
+
+            background: conic-gradient(var(--neon-emerald) var(--g-fill, 0%), rgba(255, 255, 255, 0.04) 0deg);
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: var(--transition-smooth);
+
+        }
+
+        .vector-gauge-core {
+
+            width: 106px;
+            height: 106px;
+            background: #070719;
+            border-radius: 50%;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            border: 1px solid rgba(255, 255, 255, 0.05);
+
+        }
+
+        .vector-gauge-core .g-val {
+            font-family: var(--font-display);
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .vector-gauge-core .g-unit {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+
+
+        /* ==========================================================================
+
+           9. WIDGET TYPE STYLES: AI TERMINAL MATRIX (V7)
+
+           ========================================================================== */
+
+        .ai-terminal-shell {
+
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.3);
+
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 16px;
+
+        }
+
+        .terminal-display-monitor {
+
+            height: 90px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 13px;
+
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 6px;
+
+        }
+
+        .terminal-line-node {
+            display: flex;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .terminal-line-node.user {
+            color: #fff;
+        }
+
+        .terminal-line-node.system {
+            color: var(--neon-purple);
+        }
+
+
+
+        .terminal-input-bar {
+
+            display: flex;
+            gap: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 12px;
+
+        }
+
+        .term-prompt-tag {
+            font-family: var(--font-mono);
+            color: var(--neon-purple);
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .term-input-field {
+
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: var(--font-mono);
+
+            font-size: 14px;
+            padding: 4px 0;
+
+        }
+
+        .term-fire-btn {
+
+            background: var(--neon-purple);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+
+            padding: 8px 18px;
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 700;
+
+            cursor: pointer;
+            transition: var(--transition-fast);
+
+        }
+
+        .term-fire-btn:hover {
+            background: #9600cc;
+            box-shadow: 0 0 15px rgba(189, 0, 256, 0.4);
+        }
+
+
+
+        /* ==========================================================================
+
+           10. VISUAL ANALYTICS INFRASTRUCTURE (REALTIME CANVAS GRAPH)
+
+           ========================================================================== */
+
+        .analytics-graph-container {
+
+            width: 100%;
+            height: 160px;
+            position: relative;
+            margin-top: 10px;
+
+        }
+
+        .realtime-canvas-layer {
+
+            width: 100%;
+            height: 100%;
+            display: block;
+
+        }
+
+
+
+        /* SYSTEM EVENT LOGGING ENGINE CONTAINER */
+
+        .system-event-log-box {
+
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+
+            padding: 16px;
+            height: 160px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 11px;
+
+        }
+
+        .log-row {
+
+            display: flex;
+            gap: 14px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+
+        }
+
+        .log-row .time-stamp {
+            color: var(--neon-cyan);
+            min-width: 85px;
+        }
+
+        .log-row .tag-pin {
+            color: var(--neon-amber);
+            min-width: 45px;
+        }
+
+        .log-row .msg-body {
+            color: #fff;
+        }
+
+
+
+        /* ==========================================================================
+
+           11. KEYFRAME ANIMATION PROTOCOLS
+
+           ========================================================================== */
+
+        @keyframes corePulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+                transform: rotate(0deg);
+            }
+
+            50% {
+                box-shadow: 0 0 35px rgba(189, 0, 255, 0.5);
+                transform: rotate(180deg);
+            }
+
+        }
+
+        @keyframes radarScan {
+
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+
+        }
+
+        @keyframes ledFlash {
+
+            0% {
+                background: rgba(255, 42, 95, 0.4);
+                box-shadow: 0 0 10px rgba(255, 42, 95, 0.4);
+            }
+
+            100% {
+                background: var(--neon-ruby);
+                box-shadow: 0 0 30px 10px var(--neon-ruby);
+            }
+
+        }
+
+        @keyframes spinIcon {
+
+            100% {
+                transform: rotate(360deg);
+            }
+
+        }
+
+        .spinning-effect {
+            animation: spinIcon 3s linear infinite;
+        }
+
+
+
+        /* MEDIA QUERIES FOR FLEXIBLE SCREEN LAYOUTS */
+
+        @media (max-width: 1200px) {
+
+            .span-3,
+            .span-4 {
+                grid-column: span 6;
+            }
+
+            .span-8 {
+                grid-column: span 12;
+            }
+
+        }
+
+        @media (max-width: 768px) {
+
+            .span-3,
+            .span-4,
+            .span-6,
+            .span-8 {
+                grid-column: span 12;
+            }
+
+            .system-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .live-metrics {
+                justify-content: center;
+                width: 100%;
+                gap: 16px;
+            }
+
+            .metric-pill {
+                text-align: center;
+            }
+
+            .metric-pill .val.status {
+                justify-content: center;
+            }
+
+        }
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <div class="space-bg"></div>
+
+    <div class="grid-texture"></div>
+
+
+
+    <div class="dashboard-wrapper">
+
+
+
+        <header class="system-header">
+
+            <div class="brand-section">
+
+                <div class="logo-core"><i class="ph-fill ph-atom"></i></div>
+
+                <div class="brand-text">
+
+                    <h1>AETHERIS OS</h1>
+
+                    <p>8-Channel Node Controller</p>
+
+                </div>
+
+            </div>
+
+
+
+            <button class="blynk-config-trigger" onclick="openConfigModal()">
+
+                <i class="ph-bold ph-sliders"></i>
+
+                <span>Blynk API Credentials</span>
+
+            </button>
+
+
+
+            <div class="live-metrics">
+
+                <div class="metric-pill">
+
+                    <div class="lbl">System Core Cloud</div>
+
+                    <div class="val status" id="cloud-status-text"><span class="status-dot"></span>ONLINE</div>
+
+                </div>
+
+                <div class="metric-pill">
+
+                    <div class="lbl">Local Time Vector</div>
+
+                    <div class="val time" id="clock-readout">00:00:00</div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <main class="dashboard-grid">
+
+
+
+            <section class="card span-3" id="card-node-v0">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>ไฟห้องนั่งเล่น</h4>
+
+                        <p>Living Room Light</p>
+
+                    </div>
+
+                    <div class="card-icon-frame" id="icon-node-v0"><i class="ph ph-lightbulb"></i></div>
+
+                </div>
+
+                <div class="switch-container">
+
+                    <span class="status-text-flag" id="flag-text-v0">OFF</span>
+
+                    <label class="cyber-toggle">
+
+                        <input type="checkbox" id="hardware-switch-v0" onchange="executeSwitchV0()">
+
+                        <span class="cyber-slider"></span>
+
+                    </label>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-3" id="card-node-v1">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>เครื่องปรับอากาศ</h4>
+
+                        <p>Air Conditioner System</p>
+
+                    </div>
+
+                    <div class="card-icon-frame" id="icon-node-v1"><i class="ph ph-wind"></i></div>
+
+                </div>
+
+                <div class="switch-container">
+
+                    <span class="status-text-flag" id="flag-text-v1">OFF</span>
+
+                    <label class="cyber-toggle">
+
+                        <input type="checkbox" id="hardware-switch-v1" onchange="executeSwitchV1()">
+
+                        <span class="cyber-slider"></span>
+
+                    </label>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-3" id="card-node-v2">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>ประตูดิจิทัล</h4>
+
+                        <p>Biometric Smart Lock</p>
+
+                    </div>
+
+                    <div class="card-icon-frame" id="icon-node-v2"><i class="ph-fill ph-lock"></i></div>
+
+                </div>
+
+                <div class="switch-container">
+
+                    <span class="status-text-flag" id="flag-text-v2">LOCKED</span>
+
+                    <label class="cyber-toggle">
+
+                        <input type="checkbox" id="hardware-switch-v2" onchange="executeSwitchV2()">
+
+                        <span class="cyber-slider"></span>
+
+                    </label>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-3" id="card-node-v3">
+
+                <div class="card-meta" style="margin-bottom:0px;">
+
+                    <div class="card-info">
+
+                        <h4>เซ็นเซอร์เรดาร์</h4>
+
+                        <p>Security Perimeter Radar</p>
+
+                    </div>
+
+                    <span class="status-text-flag" id="flag-text-v3"
+                        style="color:var(--neon-emerald); font-size:12px;">CLEAR</span>
+
+                </div>
+
+                <div class="radar-box-wrapper">
+
+                    <div class="radar-hardware-node" onclick="simulateRadarTriggerV3()">
+
+                        <div class="radar-sweeper"></div>
+
+                        <div class="blynk-led-node" id="led-indicator-v3"></div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-4">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>ความสว่างไฟ</h4>
+
+                        <p>Luminance Level Slider</p>
+
+                    </div>
+
+                    <i class="ph ph-sun-dim" style="color:var(--neon-amber); font-size:22px;"></i>
+
+                </div>
+
+                <div class="digital-value-large" id="lbl-readout-v4">75<span>%</span></div>
+
+                <input type="range" class="hologram-slider" id="hardware-slider-v4" min="0" max="100" value="75"
+                    oninput="renderSliderV4(this.value)" onchange="dispatchBlynkUpdate('V4', this.value)">
+
+            </section>
+
+
+
+            <section class="card span-4" id="card-node-v5">
+
+                <div class="card-meta" style="margin-bottom:12px;">
+
+                    <div class="card-info">
+
+                        <h4>ตั้งอุณหภูมิแอร์</h4>
+
+                        <p>Thermostat Step Setpoint</p>
+
+                    </div>
+
+                    <i class="ph ph-thermometer" style="color:var(--neon-cyan); font-size:22px;"></i>
+
+                </div>
+
+                <div class="step-adjuster-matrix">
+
+                    <button class="step-ctrl-btn" onclick="adjustThermostatV5(-1)"><i class="ph ph-minus"></i></button>
+
+                    <div class="step-center-readout">
+
+                        <div class="step-num-display" id="lbl-readout-v5">24</div>
+
+                    </div>
+
+                    <button class="step-ctrl-btn" onclick="adjustThermostatV5(1)"><i class="ph ph-plus"></i></button>
+
+                </div>
+
+                <div class="step-progress-track">
+
+                    <div class="step-progress-bar" id="progress-bar-v5" style="width: 50%;"></div>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-4" id="card-node-v6">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>การใช้พลังงาน</h4>
+
+                        <p>Real-time Energy Gauge</p>
+
+                    </div>
+
+                    <i class="ph ph-lightning" style="color:var(--neon-emerald); font-size:22px;"></i>
+
+                </div>
+
+                <div class="gauge-flex-hub">
+
+                    <div class="vector-gauge-circle" id="gauge-circle-v6" style="--g-fill: 35%;">
+
+                        <div class="vector-gauge-core">
+
+                            <div class="g-val" id="lbl-readout-v6">450</div>
+
+                            <div class="g-unit">Watts</div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-6" id="card-node-v7">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>ระบบควบคุมสั่งการ AI</h4>
+
+                        <p>AI Terminal Interface</p>
+
+                    </div>
+
+                    <i class="ph ph-terminal-window" style="color:var(--neon-purple); font-size:22px;"></i>
+
+                </div>
+
+                <div class="ai-terminal-shell">
+
+                    <div class="terminal-display-monitor" id="terminal-monitor">
+
+                        <div class="terminal-line-node system">> AETHERIS OS Core Initialized. Standing by...</div>
+
+                    </div>
+
+                    <div class="terminal-input-bar">
+
+                        <span class="term-prompt-tag">AI></span>
+
+                        <input type="text" class="term-input-field" id="terminal-input"
+                            placeholder="พิมพ์ข้อความสั่งการระบบ..."
+                            onkeydown="if(event.key === 'Enter') sendTerminalV7()">
+
+                        <button class="term-fire-btn" onclick="sendTerminalV7()">EXEC</button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-6">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>กราฟวิเคราะห์ข้อมูลเรียลไทม์</h4>
+
+                        <p>Real-time Telemetry Data</p>
+
+                    </div>
+
+                    <i class="ph ph-chart-line" style="color:var(--neon-cyan); font-size:22px;"></i>
+
+                </div>
+
+                <div class="analytics-graph-container">
+
+                    <canvas class="realtime-canvas-layer" id="analytics-canvas"></canvas>
+
+                </div>
+
+            </section>
+
+
+
+            <section class="card span-12">
+
+                <div class="card-meta">
+
+                    <div class="card-info">
+
+                        <h4>บันทึกเหตุการณ์ระบบ</h4>
+
+                        <p>System Event Logging Engine</p>
+
+                    </div>
+
+                    <i class="ph ph-list-bullets" style="color:var(--neon-amber); font-size:22px;"></i>
+
+                </div>
+
+                <div class="system-event-log-box" id="system-log-box">
+
+                </div>
+
+            </section>
+
+
+
+        </main>
+
+    </div>
+
+
+
+    <div class="modal-overlay" id="blynk-modal">
+
+        <div class="config-modal">
+
+            <div class="modal-header">
+
+                <h3>Blynk API Credentials</h3>
+
+                <button class="close-modal-btn" onclick="closeConfigModal()"><i class="ph ph-x"></i></button>
+
+            </div>
+
+            <div class="input-group">
+
+                <label>Blynk Auth Token</label>
+
+                <input type="text" id="blynk-token-input" value="pe9hl3-RH04Xp9_SOJM0hjzAcO2pI_zm">
+
+            </div>
+
+            <div class="input-group">
+
+                <label>Blynk Server URL</label>
+
+                <input type="text" id="blynk-server-input" value="https://blynk.cloud">
+
+            </div>
+
+            <button class="save-config-btn" onclick="saveBlynkConfig()">SAVE CHANGES</button>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        // Blynk Configuration Variables (Token injected)
+
+        let blynkToken = "pe9hl3-RH04Xp9_SOJM0hjzAcO2pI_zm";
+
+        let blynkServer = "https://blynk.cloud";
+
+
+
+        // Global Real-time Canvas Graph Cache
+
+        const canvas = document.getElementById('analytics-canvas');
+
+        let graphData = [400, 450, 420, 500, 610, 580, 700, 650, 800, 750, 920, 850];
+
+
+
+        // ══════ 1. CORE BLYNK REST API DRIVERS ══════
+
+        function writeBlynk(pin, value) {
+
+            const url = `${blynkServer}/external/api/update?token=${blynkToken}&${pin}=${encodeURIComponent(value)}`;
+
+            fetch(url)
+
+                .then(res => {
+
+                    if (res.ok) {
+
+                        addLog(pin, `Dispatched state change to cloud -> Value: ${value}`);
+
+                        document.getElementById('cloud-status-text').innerHTML = '<span class="status-dot"></span>ONLINE';
+
+                    } else {
+
+                        throw new Error("Blynk API write failed");
+
+                    }
+
+                })
+
+                .catch(err => {
+
+                    console.error(err);
+
+                    addLog("ERR", `Cloud network dispatch failed on ${pin}`);
+
+                    document.getElementById('cloud-status-text').innerHTML = '<span class="status-dot" style="background:var(--neon-ruby); box-shadow:0 0 10px var(--neon-ruby);"></span>OFFLINE';
+
+                });
+
+        }
+
+
+
+        function syncBlynkState() {
+
+            const pins = ['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
+
+            pins.forEach(pin => {
+
+                const url = `${blynkServer}/external/api/get?token=${blynkToken}&${pin}`;
+
+                fetch(url)
+
+                    .then(res => {
+
+                        if (!res.ok) throw new Error();
+
+                        return res.text();
+
+                    })
+
+                    .then(val => {
+
+                        if (val !== undefined && val.trim() !== "Pin not found" && val.trim() !== "") {
+
+                            applyPinState(pin, val.trim());
+
+                        }
+
+                    })
+
+                    .catch(err => console.log(`Sync error on pin ${pin}`));
+
+            });
+
+        }
+
+
+
+        function applyPinState(pin, val) {
+
+            if (pin === 'V0') {
+
+                const isTrue = parseInt(val) === 1;
+
+                document.getElementById('hardware-switch-v0').checked = isTrue;
+
+                document.getElementById('flag-text-v0').innerText = isTrue ? 'ON' : 'OFF';
+
+                const card = document.getElementById('card-node-v0');
+
+                if (isTrue) card.classList.add('active-v0'); else card.classList.remove('active-v0');
+
+            }
+
+            else if (pin === 'V1') {
+
+                const isTrue = parseInt(val) === 1;
+
+                document.getElementById('hardware-switch-v1').checked = isTrue;
+
+                document.getElementById('flag-text-v1').innerText = isTrue ? 'ON' : 'OFF';
+
+                const card = document.getElementById('card-node-v1');
+
+                if (isTrue) card.classList.add('active-v1'); else card.classList.remove('active-v1');
+
+            }
+
+            else if (pin === 'V2') {
+
+                const isTrue = parseInt(val) === 1;
+
+                document.getElementById('hardware-switch-v2').checked = isTrue;
+
+                document.getElementById('flag-text-v2').innerText = isTrue ? 'LOCKED' : 'UNLOCKED';
+
+                const card = document.getElementById('card-node-v2');
+
+                if (isTrue) card.classList.add('active-v2'); else card.classList.remove('active-v2');
+
+            }
+
+            else if (pin === 'V3') {
+
+                const isTrue = parseInt(val) === 1;
+
+                document.getElementById('flag-text-v3').innerText = isTrue ? 'ALERT' : 'CLEAR';
+
+                document.getElementById('flag-text-v3').style.color = isTrue ? 'var(--neon-ruby)' : 'var(--neon-emerald)';
+
+                const card = document.getElementById('card-node-v3');
+
+                if (isTrue) card.classList.add('alert-active-v3'); else card.classList.remove('alert-active-v3');
+
+            }
+
+            else if (pin === 'V4') {
+
+                document.getElementById('hardware-slider-v4').value = val;
+
+                document.getElementById('lbl-readout-v4').innerHTML = `${val}<span>%</span>`;
+
+            }
+
+            else if (pin === 'V5') {
+
+                document.getElementById('lbl-readout-v5').innerText = val;
+
+                const temp = parseFloat(val) || 24;
+
+                const perc = Math.max(0, Math.min(100, ((temp - 16) / (30 - 16)) * 100));
+
+                document.getElementById('progress-bar-v5').style.width = `${perc}%`;
+
+            }
+
+            else if (pin === 'V6') {
+
+                document.getElementById('lbl-readout-v6').innerText = val;
+
+                const watts = parseFloat(val) || 0;
+
+                const fillPerc = Math.max(0, Math.min(100, (watts / 3000) * 100));
+
+                document.getElementById('gauge-circle-v6').style.setProperty('--g-fill', `${fillPerc}%`);
+
+                pushGraphData(watts);
+
+            }
+
+        }
+
+
+
+        // ══════ 2. INTERACTIVE UI ACTION CAPTURES ══════
+
+        function executeSwitchV0() {
+
+            const chk = document.getElementById('hardware-switch-v0').checked;
+
+            applyPinState('V0', chk ? 1 : 0);
+
+            writeBlynk("V0", chk ? 1 : 0);
+
+        }
+
+
+
+        function executeSwitchV1() {
+
+            const chk = document.getElementById('hardware-switch-v1').checked;
+
+            applyPinState('V1', chk ? 1 : 0);
+
+            writeBlynk("V1", chk ? 1 : 0);
+
+        }
+
+
+
+        function executeSwitchV2() {
+
+            const chk = document.getElementById('hardware-switch-v2').checked;
+
+            applyPinState('V2', chk ? 1 : 0);
+
+            writeBlynk("V2", chk ? 1 : 0);
+
+        }
+
+
+
+        function simulateRadarTriggerV3() {
+
+            const card = document.getElementById('card-node-v3');
+
+            const currentAlert = card.classList.contains('alert-active-v3');
+
+            const nextState = currentAlert ? 0 : 1;
+
+            applyPinState('V3', nextState);
+
+            writeBlynk("V3", nextState);
+
+        }
+
+
+
+        function renderSliderV4(val) {
+
+            document.getElementById('lbl-readout-v4').innerHTML = `${val}<span>%</span>`;
+
+        }
+
+
+
+        function dispatchBlynkUpdate(pin, val) {
+
+            writeBlynk(pin, val);
+
+        }
+
+
+
+        function adjustThermostatV5(direction) {
+
+            const lbl = document.getElementById('lbl-readout-v5');
+
+            let currentTemp = parseInt(lbl.innerText) || 24;
+
+            currentTemp += direction;
+
+            if (currentTemp < 16) currentTemp = 16;
+
+            if (currentTemp > 30) currentTemp = 30;
+
+
+
+            applyPinState('V5', currentTemp);
+
+            writeBlynk("V5", currentTemp);
+
+        }
+
+
+
+        function sendTerminalV7() {
+
+            const input = document.getElementById('terminal-input');
+
+            const monitor = document.getElementById('terminal-monitor');
+
+            const text = input.value.trim();
+
+            if (!text) return;
+
+
+
+            const userLine = document.createElement('div');
+
+            userLine.className = 'terminal-line-node user';
+
+            userLine.innerText = `YOU> ${text}`;
+
+            monitor.appendChild(userLine);
+
+
+
+            writeBlynk("V7", text);
+
+            input.value = '';
+
+            monitor.scrollTop = monitor.scrollHeight;
+
+
+
+            setTimeout(() => {
+
+                const sysLine = document.createElement('div');
+
+                sysLine.className = 'terminal-line-node system';
+
+                sysLine.innerText = `AI> Telemetry command issued over node matrix.`;
+
+                monitor.appendChild(sysLine);
+
+                monitor.scrollTop = monitor.scrollHeight;
+
+            }, 800);
+
+        }
+
+
+
+        // ══════ 3. CANVAS SYSTEM DATA GRAPH ══════
+
+        function pushGraphData(val) {
+
+            graphData.push(parseFloat(val));
+
+            if (graphData.length > 15) graphData.shift();
+
+            drawGraph();
+
+        }
+
+
+
+        function drawGraph() {
+
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.clientWidth;
+
+            canvas.height = canvas.clientHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+
+            // Grid Lines
+
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.05)';
+
+            ctx.lineWidth = 1;
+
+            for (let i = 1; i < 4; i++) {
+
+                let y = (canvas.height / 4) * i;
+
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+
+            }
+
+
+
+            if (graphData.length === 0) return;
+
+            const maxVal = Math.max(...graphData, 1200);
+
+            const stepX = canvas.width / (graphData.length - 1);
+
+
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+
+            gradient.addColorStop(0, 'rgba(0, 255, 136, 0.25)');
+
+            gradient.addColorStop(1, 'transparent');
+
+
+
+            ctx.beginPath();
+
+            for (let i = 0; i < graphData.length; i++) {
+
+                let x = i * stepX;
+
+                let y = canvas.height - (graphData[i] / maxVal) * (canvas.height - 20) - 10;
+
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+
+            }
+
+            ctx.strokeStyle = 'var(--neon-emerald)';
+
+            ctx.lineWidth = 2;
+
+            ctx.stroke();
+
+
+
+            ctx.lineTo((graphData.length - 1) * stepX, canvas.height);
+
+            ctx.lineTo(0, canvas.height);
+
+            ctx.fillStyle = gradient;
+
+            ctx.fill();
+
+        }
+
+
+
+        // ══════ 4. UTILITIES: EVENT LOGGER & CLOCK & MODAL ══════
+
+        function addLog(pin, message) {
+
+            const logBox = document.getElementById('system-log-box');
+
+            if (!logBox) return;
+
+            const now = new Date();
+
+            const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+
+
+            const row = document.createElement('div');
+
+            row.className = 'log-row';
+
+            row.innerHTML = `<span class="time-stamp">[${timeStr}]</span><span class="tag-pin">${pin}</span><span class="msg-body">${message}</span>`;
+
+            logBox.insertBefore(row, logBox.firstChild);
+
+
+
+            while (logBox.children.length > 30) logBox.removeChild(logBox.lastChild);
+
+        }
+
+
+
+        function openConfigModal() { document.getElementById('blynk-modal').classList.add('active'); }
+
+        function closeConfigModal() { document.getElementById('blynk-modal').classList.remove('active'); }
+
+        function saveBlynkConfig() {
+
+            blynkToken = document.getElementById('blynk-token-input').value.trim();
+
+            blynkServer = document.getElementById('blynk-server-input').value.trim();
+
+            closeConfigModal();
+
+            addLog("SYS", "Blynk server configuration vectors remmapped.");
+
+            syncBlynkState();
+
+        }
+
+
+
+        // Initialize Engine Vectors
+
+        window.onload = function () {
+
+            setInterval(() => {
+
+                document.getElementById('clock-readout').innerText = new Date().toTimeString().split(' ')[0];
+
+            }, 1000);
+
+
+
+            drawGraph();
+
+            addLog("SYS", "AETHERIS Core Operating System Loaded.");
+
+            addLog("SYS", "Secure Blynk Token injected into live telemetry.");
+
+
+
+            syncBlynkState();
+
+            setInterval(syncBlynkState, 4000); // Poll cloud telemetry every 4 seconds
+
+        };
+
+
+
+        window.addEventListener('resize', drawGraph);
+
+    </script>
+
+</body>
+
+</html>
